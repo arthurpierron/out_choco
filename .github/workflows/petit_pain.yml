@@ -99,8 +99,6 @@ jobs:
     if: |
       github.event_name == 'push' &&
       needs.check_conditions.outputs.should_run == 'true'
-    env:
-      HAS_MIRROR_URL: ${{ MIRROR_URL != '' }}
     steps:
       - name: Check mirror configuration
         if: env.HAS_MIRROR_URL != 'true'
