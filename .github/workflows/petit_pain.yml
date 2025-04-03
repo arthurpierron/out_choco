@@ -59,25 +59,32 @@ jobs:
           fi
 
   check_program_compilation:
-    needs: [check_conditions, check_coding_style]
-    if: needs.check_conditions.outputs.should_run == 'true'
-    runs-on: ubuntu-latest
-    container: epitechcontent/epitest-docker
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        
-      - name: Compile project
-        run: make
-        timeout-minutes: 2
-        
-      - name: Verify executables
-        run: |
-          if [ -z "$EXECUTABLES" ]; then
-            echo "::warning::No executables defined in EXECUTABLES"
-            exit 0
+  needs: [check_conditions, check_coding_style]
+  if: needs.check_conditions.outputs.should_run == 'true'
+  runs-on: ubuntu-latest
+  container: epitechcontent/epitest-docker
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Compile project
+      run: |
+        make re
+        echo "::group::Compilation output"
+        make
+        echo "::endgroup::"
+      timeout-minutes: 2
+    
+    - name: Verify executables
+      run: |
+        if [ -z "$EXECUTABLES" ]; then
+          # Si aucun exécutable n'est spécifié, on vérifie le binaire par défaut
+          if [ -f "choco" ]; then
+            echo "✓ Found default executable: choco"
+          else
+            echo "::warning::No default executable found"
           fi
-          
+        else
           IFS=',' read -ra EXECS <<< "$EXECUTABLES"
           for exec in "${EXECS[@]}"; do
             if [ ! -f "$exec" ]; then
@@ -90,9 +97,10 @@ jobs:
             fi
             echo "✓ Valid executable: $exec"
           done
-          
-      - name: Clean build
-        run: make fclean
+        fi
+    
+    - name: Clean build
+      run: make fclean
 
   run_tests:
     needs: check_program_compilation
