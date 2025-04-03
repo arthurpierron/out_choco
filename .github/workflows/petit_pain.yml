@@ -94,7 +94,7 @@ jobs:
         timeout-minutes: 2
 
   push_to_mirror:
-    needs: run_criterion_tests
+    needs: run_tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
