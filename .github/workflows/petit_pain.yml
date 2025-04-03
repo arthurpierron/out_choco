@@ -28,32 +28,34 @@ jobs:
             echo "should_run=true" >> $GITHUB_OUTPUT
           fi
 
-check_coding_style:
-    name: Checking coding style
+  check_coding_style:
+    needs: check_conditions
+    if: needs.check_conditions.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     container: ghcr.io/epitech/coding-style-checker:latest
-    outputs:
-        run_jobs: ${{steps.set_output.outputs.run_jobs}}
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{github.head_ref}}
-          fetch-depth: 1
-        
-      - name: run coding style
-        run: $(check.sh $(pwd) $(pwd))
-
-      - name: check coding style error
-        id: set_output
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Run coding style check
+        run: check.sh $(pwd) $(pwd)
+      
+      - name: Display errors
         run: |
-          if [ -s $(pwd)/coding-style-reports.log ]; then
-            echo "run_jobs=false" >> $GITHUB_OUTPUT
-            while IFS=':' read -r FILE LINE GRAVITY ERROR; do
-              echo "::error file=$FILE,line=$LINE,title=$GRAVITY::$ERROR"
-            done < $(pwd)/coding-style-reports.log
-          else
-            echo "run_jobs=true" >> $GITHUB_OUTPUT
+          if [ -f coding-style-reports.log ]; then
+            ERROR_COUNT=0
+            while read -r line; do
+              file=$(echo "$line" | cut -d':' -f1)
+              line_num=$(echo "$line" | cut -d':' -f2)
+              message=$(echo "$line" | cut -d':' -f3-)
+              echo "::error file=$file,line=$line_num::$message"
+              ((ERROR_COUNT++))
+            done < coding-style-reports.log
+            
+            if [ $ERROR_COUNT -gt 0 ]; then
+              echo "::error::Found $ERROR_COUNT coding style errors"
+              exit 1
+            fi
           fi
 
   check_program_compilation:
