@@ -10,3 +10,9 @@ int my_add(int a, int b)
 {
     return a + b;
 }
+
+int main(void)
+{
+    my_add(1, 2);
+    return 0;
+}

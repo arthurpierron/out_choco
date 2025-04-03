@@ -6,7 +6,7 @@
 */
 
 #ifndef MY_H_
-#define MY_H_
+    #define MY_H_
 
 int my_add(int a, int b);
 

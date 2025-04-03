@@ -10,13 +10,13 @@ CFLAGS = -I./include -Wall -Wextra -Werror
 TESTS_FLAGS = -lcriterion --coverage
 SRC = src/add.c
 OBJ = $(SRC:.c=.o)
-NAME = my_lib
+NAME = choco
 TEST_NAME = unit_tests
 
 all: $(NAME)
 
 $(NAME): $(OBJ)
-	ar rc lib$(NAME).a $(OBJ)
+	$(CC) -o $(NAME) $(OBJ) $(CFLAGS)
 
 %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
@@ -32,7 +32,7 @@ clean:
 	rm -f *.gc*
 
 fclean: clean
-	rm -f lib$(NAME).a
+	rm -f $(NAME)
 	rm -f $(TEST_NAME)
 
 re: fclean all
