@@ -57,9 +57,26 @@ jobs:
             echo "run_jobs=true" >> $GITHUB_OUTPUT
           fi
 
+  check_conditions:
+  runs-on: ubuntu-latest
+  outputs:
+    should_run: ${{ steps.check.outputs.should_run }}
+  steps:
+    - name: Check execution conditions
+      id: check
+      run: |
+        # Vérifie si on doit skip le workflow
+        if [[ "$GITHUB_REPOSITORY" == "${MIRROR_URL#*:}" || "$GITHUB_REF" == refs/heads/ga-ignore* ]]; then
+          echo "should_run=false" >> $GITHUB_OUTPUT
+          echo "::notice::Skipping workflow (mirror repository or ga-ignore branch)"
+        else
+          echo "should_run=true" >> $GITHUB_OUTPUT
+          echo "::notice::Proceeding with workflow execution"
+        fi
+
   check_program_compilation:
-    needs: check_coding_style
-    if: needs.check_conditions.outputs.should_run == 'true'
+    needs: [check_conditions, check_coding_style]  # Les deux dépendances
+    if: ${{ needs.check_conditions.outputs.should_run == 'true' && success() }}  # Vérifie aussi le succès des jobs précédents
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker
     steps:
@@ -91,7 +108,7 @@ jobs:
           done
           
       - name: Clean build
-        run: make clean
+        run: make fclean
 
   run_tests:
     needs: check_program_compilation
