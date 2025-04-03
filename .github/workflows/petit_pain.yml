@@ -58,21 +58,21 @@ jobs:
           fi
 
   check_conditions:
-  runs-on: ubuntu-latest
-  outputs:
-    should_run: ${{ steps.check.outputs.should_run }}
-  steps:
-    - name: Check execution conditions
-      id: check
-      run: |
-        # Vérifie si on doit skip le workflow
-        if [[ "$GITHUB_REPOSITORY" == "${MIRROR_URL#*:}" || "$GITHUB_REF" == refs/heads/ga-ignore* ]]; then
-          echo "should_run=false" >> $GITHUB_OUTPUT
-          echo "::notice::Skipping workflow (mirror repository or ga-ignore branch)"
-        else
-          echo "should_run=true" >> $GITHUB_OUTPUT
-          echo "::notice::Proceeding with workflow execution"
-        fi
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check execution conditions
+        id: check
+        run: |
+          # Vérifie si on doit skip le workflow
+          if [[ "$GITHUB_REPOSITORY" == "${MIRROR_URL#*:}" || "$GITHUB_REF" == refs/heads/ga-ignore* ]]; then
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "::notice::Skipping workflow (mirror repository or ga-ignore branch)"
+          else
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "::notice::Proceeding with workflow execution"
+          fi
 
   check_program_compilation:
     needs: [check_conditions, check_coding_style]  # Les deux dépendances
