@@ -1,0 +1,129 @@
+name: CHOCOLATINE Workflow
+
+on:
+  push:
+    branches-ignore:
+      - 'ga-ignore**'
+  pull_request:
+    branches-ignore:
+      - 'ga-ignore**'
+
+env:
+  MIRROR_URL: ${{ secrets.MIRROR_URL }}
+  EXECUTABLES: ${{ secrets.EXECUTABLES }}
+
+jobs:
+  check_conditions:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check repository conditions
+        id: check
+        run: |
+          # Vérifie si on est dans le dépôt miroir ou une branche ignorée
+          if [[ "$GITHUB_REPOSITORY" == "${MIRROR_URL#*:}" || "$GITHUB_REF" == refs/heads/ga-ignore* ]]; then
+            echo "::set-output name=should_run::false"
+            echo "::notice::Skipping workflow: mirror repository or ga-ignore branch"
+          else
+            echo "::set-output name=should_run::true"
+          fi
+
+  check_coding_style:
+    name: Checking coding style
+    runs-on: ubuntu-latest
+    container: ghcr.io/epitech/coding-style-checker:latest
+    outputs:
+        run_jobs: ${{steps.set_output.outputs.run_jobs}}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{github.head_ref}}
+          fetch-depth: 1
+        
+      - name: run coding style
+        run: $(check.sh $(pwd) $(pwd))
+
+      - name: check coding style error
+        id: set_output
+        run: |
+          if [ -s $(pwd)/coding-style-reports.log ]; then
+            echo "run_jobs=false" >> $GITHUB_OUTPUT
+            while IFS=':' read -r FILE LINE GRAVITY ERROR; do
+              echo "::error file=$FILE,line=$LINE,title=$GRAVITY::$ERROR"
+            done < $(pwd)/coding-style-reports.log
+          else
+            echo "run_jobs=true" >> $GITHUB_OUTPUT
+          fi
+
+  check_program_compilation:
+    needs: check_coding_style
+    if: needs.check_conditions.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    container: epitechcontent/epitest-docker
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Compile project
+        run: make
+        timeout-minutes: 2
+        
+      - name: Verify executables
+        run: |
+          if [ -z "$EXECUTABLES" ]; then
+            echo "::warning::No executables defined in EXECUTABLES"
+            exit 0
+          fi
+          
+          IFS=',' read -ra EXECS <<< "$EXECUTABLES"
+          for exec in "${EXECS[@]}"; do
+            if [ ! -f "$exec" ]; then
+              echo "::error file=$exec::Executable not found"
+              exit 1
+            fi
+            if [ ! -x "$exec" ]; then
+              echo "::error file=$exec::File is not executable"
+              exit 1
+            fi
+            echo "✓ Valid executable: $exec"
+          done
+          
+      - name: Clean build
+        run: make clean
+
+  run_tests:
+    needs: check_program_compilation
+    if: needs.check_conditions.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    container: epitechcontent/epitest-docker
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Run tests
+        run: make tests_run
+        timeout-minutes: 2
+
+  push_to_mirror:
+    needs: run_tests
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      needs.check_conditions.outputs.should_run == 'true'
+    env:
+      HAS_MIRROR_URL: ${{ secrets.MIRROR_URL != '' }}
+    steps:
+      - name: Check mirror configuration
+        if: env.HAS_MIRROR_URL != 'true'
+        run: |
+          echo "::warning::MIRROR_URL secret is missing"
+          exit 0  # Skip job gracefully
+
+      - name: Mirror repository
+        if: env.HAS_MIRROR_URL == 'true'
+        uses: pixta-dev/repository-mirroring-action@v1
+        with:
+          target_repo_url: ${{ secrets.MIRROR_URL }}
+          ssh_private_key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
