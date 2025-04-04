@@ -64,7 +64,7 @@ jobs:
     container: epitechcontent/epitest-docker
     steps:
       - uses: actions/checkout@v4
-      - run: timeout 120 make perso
+      - run: timeout 120 make
       - run: make clean
       - name: Check executables
         shell: bash
