@@ -78,7 +78,7 @@ jobs:
             echo "Executable found: $e"
           done
       - name: Clean build
-        run: make clean
+        run: make fclean
 
   run_tests:
     needs: check_program_compilation

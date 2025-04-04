@@ -31,14 +31,15 @@ clean:
 	@rm -f *.gcda
 	@rm -f *.gcno
 	@rm -f *~
-	@rm -f libmy.a
-	@rm -f a.out
-	@rm -f unit_tests
+
 
 fclean: clean
 		@rm -f $(NAME)
 		@rm -f *~
 		@$(MAKE) -C lib/my fclean
+		@rm -f libmy.a
+		@rm -f unit_tests
+		@rm -f a.out
 
 re : fclean all
 
