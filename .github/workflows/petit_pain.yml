@@ -10,7 +10,7 @@ on:
 
 env:
   MIRROR_URL: "git@github.com:arthurpierron/out_choco.git"
-  EXECUTABLES: "printf"
+  EXECUTABLES: "a.out"
 jobs:
   check_conditions:
     runs-on: ubuntu-latest
