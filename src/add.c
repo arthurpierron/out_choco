@@ -13,6 +13,7 @@ int my_add(int a, int b)
 
 int main(void)
 {
+    int i = 0;
     my_add(1, 2);
     return 0;
 }
