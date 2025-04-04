@@ -1,8 +1,8 @@
 /*
 ** EPITECH PROJECT, 2024
-** my_putchar
+** my_putchar.c
 ** File description:
-** lib
+** display caracter
 */
 
 #include <unistd.h>

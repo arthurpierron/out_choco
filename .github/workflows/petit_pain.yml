@@ -10,7 +10,7 @@ on:
 
 env:
   MIRROR_URL: "git@github.com:arthurpierron/out_choco.git"
-  EXECUTABLES: "libmy.a"
+  EXECUTABLES: "printf"
 jobs:
   check_conditions:
     runs-on: ubuntu-latest
@@ -64,7 +64,7 @@ jobs:
     container: epitechcontent/epitest-docker
     steps:
       - uses: actions/checkout@v4
-      - run: timeout 120 make
+      - run: timeout 120 make perso
       - run: make clean
       - name: Check executables
         shell: bash
